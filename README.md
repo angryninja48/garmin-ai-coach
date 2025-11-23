@@ -15,6 +15,7 @@
 * [✨ What Makes This Special](#-what-makes-this-special)
 * [🎯 See It In Action](#-see-it-in-action)
 * [🚀 Quick Start (CLI-first)](#-quick-start-cli-first)
+* [⚡ Efficient Weekly Workflow](docs/WEEKLY_WORKFLOW.md) 🆕
 * [💻 Installation & Setup](#-installation--setup)
 * [🎛️ AI Configuration & Models](#️-ai-configuration--models)
 * [📋 Configuration](#-configuration)
@@ -136,13 +137,19 @@ pixi run coach-init my_training_config.yaml
 
 # 3) Edit the config with your details, then run
 pixi run coach-cli --config my_training_config.yaml
+
+# 4) Weekly updates (fast & cheap - see docs/WEEKLY_WORKFLOW.md)
+pixi run coach-cli --config my_training_config.yaml --update-plan
 ```
 
 ### CLI command reference
 
 ```bash
-# Run with an existing config
+# Run full analysis (initial setup or monthly deep-dive)
 python cli/garmin_ai_coach_cli.py --config my_training_config.yaml [--output-dir ./data]
+
+# Run weekly plan update (fast & cost-effective)
+python cli/garmin_ai_coach_cli.py --config my_training_config.yaml --update-plan
 
 # Generate a new config template
 python cli/garmin_ai_coach_cli.py --init-config my_training_config.yaml
@@ -152,16 +159,19 @@ python cli/garmin_ai_coach_cli.py --init-config my_training_config.yaml
 
 * `--config PATH` — Path to YAML or JSON config
 * `--init-config PATH` — Create a template config at PATH
+* `--update-plan` — Run lightweight weekly plan update (requires previous analysis)
 * `--output-dir PATH` — Override output directory from config
 
 **Outputs:**
 
 * `analysis.html` — Comprehensive performance analysis
 * `planning.html` — Detailed weekly training plan
-* `metrics_result.md`, `activity_result.md`, `physiology_result.md`, `season_plan.md` — Intermediate artifacts
+* `metrics_result.md`, `activity_result.md`, `physiology_result.md`, `season_plan.md` — Intermediate artifacts (reused by `--update-plan`)
 * `summary.json` — Metadata and cost tracking with keys:
 
   * `total_cost_usd`, `total_tokens`, `execution_id`, `trace_id`, `root_run_id`, `files_generated`, `competitions`
+
+**📖 See [docs/WEEKLY_WORKFLOW.md](docs/WEEKLY_WORKFLOW.md) for efficient ongoing training workflow**
 
 ---
 

@@ -15,31 +15,52 @@ pixi run coach-init my_config.yaml
 
 # 2) Edit the file with your details (athlete.email, context, etc.)
 
-# 3) Run the analysis and planning
+# 3) Run the initial analysis and planning
 pixi run coach-cli --config my_config.yaml
+
+# 4) Weekly updates (fast & cheap)
+pixi run coach-cli --config my_config.yaml --update-plan
 ```
 
 Using Python directly:
 ```bash
 python cli/garmin_ai_coach_cli.py --init-config my_config.yaml
 python cli/garmin_ai_coach_cli.py --config my_config.yaml [--output-dir ./data]
+python cli/garmin_ai_coach_cli.py --config my_config.yaml --update-plan
 ```
+
+**📖 See [../docs/WEEKLY_WORKFLOW.md](../docs/WEEKLY_WORKFLOW.md) for efficient ongoing training workflow**
 
 ## Command reference
 
 ```bash
-python cli/garmin_ai_coach_cli.py --config PATH [--output-dir PATH]
+python cli/garmin_ai_coach_cli.py --config PATH [--output-dir PATH] [--update-plan]
 python cli/garmin_ai_coach_cli.py --init-config PATH
 ```
 
 Options:
 - --config PATH        Path to YAML or JSON config (mutually exclusive with --init-config)
 - --init-config PATH   Write a config template to PATH and exit
+- --update-plan        Run lightweight weekly plan update (requires previous analysis files)
 - --output-dir PATH    Override the output.directory specified in the config
+
+Modes:
+- **Full Analysis** (default): Comprehensive analysis + planning. Run initially and monthly.
+  - Cost: $2-5 per run
+  - Time: 3-5 minutes
+  - Extracts up to 365 days of data
+  
+- **Weekly Update** (--update-plan): Fast plan refresh with latest metrics + progress notes.
+  - Cost: $0.10-0.50 per run (~90% cheaper)
+  - Time: 30-60 seconds
+  - Extracts only last 14 days
+  - Reuses previous expert analysis
+  - Requires: `metrics_result.md`, `activity_result.md`, `physiology_result.md`, `season_plan.md` in output directory
 
 Notes:
 - If `credentials.password` is not provided in the config, you will be securely prompted at runtime.
 - The CLI sets AI_MODE from `extraction.ai_mode` automatically for downstream components.
+- Add `weekly_progress.notes` to config for best weekly update results.
 
 ## Configuration
 

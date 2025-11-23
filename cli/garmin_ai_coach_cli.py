@@ -57,12 +57,15 @@ class ConfigParser:
         )
 
     def get_extraction_config(self) -> dict[str, Any]:
+        extraction = self.config.get("extraction", {})
         return {
-            "activities_days": self.config.get("extraction", {}).get("activities_days", 7),
-            "metrics_days": self.config.get("extraction", {}).get("metrics_days", 14),
-            "ai_mode": self.config.get("extraction", {}).get("ai_mode", "development"),
-            "enable_plotting": self.config.get("extraction", {}).get("enable_plotting", False),
-            "hitl_enabled": self.config.get("extraction", {}).get("hitl_enabled", True),
+            "activities_days": extraction.get("activities_days", 7),
+            "metrics_days": extraction.get("metrics_days", 14),
+            "context_recent_days": extraction.get("context_recent_days", 14),
+            "context_trends_days": extraction.get("context_trends_days", 180),
+            "ai_mode": extraction.get("ai_mode", "development"),
+            "enable_plotting": extraction.get("enable_plotting", False),
+            "hitl_enabled": extraction.get("hitl_enabled", True),
         }
 
     def get_competitions(self) -> list[dict[str, Any]]:
@@ -86,6 +89,10 @@ class ConfigParser:
             self.config.get("credentials", {}).get("password", "") or
             getpass.getpass("Enter Garmin Connect password: ")
         )
+
+    def get_weekly_progress(self) -> str:
+        """Get progress notes from config for weekly updates."""
+        return self.config.get("weekly_progress", {}).get("notes", "").strip()
 
 
 def fetch_outside_competitions_from_config(config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -140,7 +147,7 @@ async def run_analysis_from_config(config_path: Path) -> None:
         create_integrated_analysis_and_planning_workflow,
         run_complete_analysis_and_planning,
     )
-    from services.garmin import ExtractionConfig, TriathlonCoachDataExtractor
+    from services.garmin import ExtractionConfig, TriathlonCoachDataExtractor, prepare_agent_context
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -157,6 +164,19 @@ async def run_analysis_from_config(config_path: Path) -> None:
 
         garmin_data = extractor.extract_data(extraction_config)
         logger.info("Data extraction completed")
+        
+        # Prepare optimized context for agents
+        recent_days = extraction_settings.get("context_recent_days", 14)
+        trends_days = extraction_settings.get("context_trends_days", 180)
+        logger.info(f"Preparing optimized context: {recent_days}d recent + {trends_days}d trends...")
+        garmin_data_dict = asdict(garmin_data)
+        prepared_context = prepare_agent_context(
+            garmin_data=garmin_data_dict,
+            analysis_date=None,  # Use today
+            recent_window_days=recent_days,
+            trends_window_days=trends_days,
+        )
+        logger.info("Context preparation completed")
 
         now = datetime.now()
         plotting_enabled = extraction_settings.get("enable_plotting", False)
@@ -207,7 +227,8 @@ async def run_analysis_from_config(config_path: Path) -> None:
                     initial_state=create_initial_state(
                         user_id="cli_user",
                         athlete_name=athlete_name,
-                        garmin_data=asdict(garmin_data),
+                        garmin_data=garmin_data_dict,
+                        prepared_context=prepared_context,
                         analysis_context=analysis_context,
                         planning_context=planning_context,
                         competitions=competitions,
@@ -232,7 +253,8 @@ async def run_analysis_from_config(config_path: Path) -> None:
             result = await run_complete_analysis_and_planning(
                 user_id="cli_user",
                 athlete_name=athlete_name,
-                garmin_data=asdict(garmin_data),
+                garmin_data=garmin_data_dict,
+                prepared_context=prepared_context,
                 analysis_context=analysis_context,
                 planning_context=planning_context,
                 competitions=competitions,
@@ -294,6 +316,123 @@ async def run_analysis_from_config(config_path: Path) -> None:
         raise
 
 
+async def run_weekly_update_from_config(config_path: Path) -> None:
+    """Run lightweight weekly plan update without full analysis.
+    
+    This reuses previous analysis results and only updates the weekly plan
+    with fresh metrics and progress notes. Much faster and cheaper than
+    running full analysis.
+    """
+    config_parser = ConfigParser(config_path)
+    athlete_name, email = config_parser.get_athlete_info()
+    planning_context = config_parser.get_contexts()[1]  # Only need planning context
+    weekly_progress = config_parser.get_weekly_progress()
+    extraction_settings = config_parser.get_extraction_config()
+    
+    competitions = config_parser.get_competitions()
+    outside_competitions = fetch_outside_competitions_from_config(config_parser.config)
+    if outside_competitions:
+        competitions.extend(outside_competitions)
+    
+    output_dir = config_parser.get_output_directory()
+    
+    logger.info(f"Running weekly update for {athlete_name}")
+    logger.info(f"Output directory: {output_dir}")
+    
+    # Check for previous analysis files
+    required_files = ["metrics_result.md", "activity_result.md", "physiology_result.md", "season_plan.md"]
+    missing_files = [f for f in required_files if not (output_dir / f).exists()]
+    if missing_files:
+        logger.error(f"❌ Missing previous analysis files: {', '.join(missing_files)}")
+        logger.error("Run full analysis first with: pixi run coach-cli --config <config>")
+        raise FileNotFoundError(f"Required analysis files not found: {missing_files}")
+    
+    password = config_parser.get_password()
+    os.environ["AI_MODE"] = extraction_settings.get("ai_mode", "development")
+    
+    from services.ai.langgraph.workflows.weekly_update_workflow import run_weekly_update
+    from services.garmin import ExtractionConfig, TriathlonCoachDataExtractor
+    
+    try:
+        logger.info("Extracting incremental Garmin data (last 14 days)...")
+        extractor = TriathlonCoachDataExtractor(email, password)
+        
+        # Only fetch last 14 days for efficiency
+        extraction_config = ExtractionConfig(
+            activities_range=14,
+            metrics_range=14,
+            include_detailed_activities=True,
+            include_metrics=True,
+        )
+        
+        garmin_data = extractor.extract_data(extraction_config)
+        garmin_data_dict = asdict(garmin_data)
+        logger.info("Incremental data extraction completed")
+        
+        # Load previous analysis results
+        logger.info("Loading previous analysis results...")
+        metrics_result = (output_dir / "metrics_result.md").read_text(encoding="utf-8")
+        activity_result = (output_dir / "activity_result.md").read_text(encoding="utf-8")
+        physiology_result = (output_dir / "physiology_result.md").read_text(encoding="utf-8")
+        season_plan = (output_dir / "season_plan.md").read_text(encoding="utf-8")
+        
+        now = datetime.now()
+        current_date = {"date": now.strftime("%Y-%m-%d"), "day_name": now.strftime("%A")}
+        week_dates = [
+            {"date": (now + timedelta(days=offset)).strftime("%Y-%m-%d"),
+             "day_name": (now + timedelta(days=offset)).strftime("%A")}
+            for offset in range(14)
+        ]
+        
+        logger.info("Running AI weekly plan update...")
+        result = await run_weekly_update(
+            user_id="cli_user",
+            athlete_name=athlete_name,
+            incremental_garmin_data=garmin_data_dict,
+            weekly_progress=weekly_progress,
+            planning_context=planning_context,
+            competitions=competitions,
+            current_date=current_date,
+            week_dates=week_dates,
+            metrics_result=metrics_result,
+            activity_result=activity_result,
+            physiology_result=physiology_result,
+            season_plan=season_plan,
+        )
+        
+        logger.info("Saving updated plan...")
+        
+        if content := result.get("planning_html"):
+            (output_dir / "planning.html").write_text(content, encoding="utf-8")
+            logger.info(f"Saved: {output_dir}/planning.html")
+        
+        cost_total = float(result.get("cost_summary", {}).get("total_cost_usd", 0.0))
+        total_tokens = int(result.get("cost_summary", {}).get("total_tokens", 0))
+        
+        # Update summary.json with weekly update metadata
+        summary_path = output_dir / "summary.json"
+        if summary_path.exists():
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        else:
+            summary = {"athlete": athlete_name}
+        
+        summary.update({
+            "last_weekly_update": datetime.now().isoformat(),
+            "weekly_update_cost_usd": cost_total,
+            "weekly_update_tokens": total_tokens,
+        })
+        
+        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        
+        logger.info("✅ Weekly update completed successfully!")
+        logger.info(f"📁 Updated plan saved to: {output_dir}")
+        logger.info(f"💰 Update cost: ${cost_total:.2f} ({total_tokens} tokens)")
+        
+    except Exception as e:
+        logger.error(f"❌ Weekly update failed: {e}")
+        raise
+
+
 def create_config_template(output_path: Path) -> None:
     template_path = Path(__file__).parent / "coach_config_template.yaml"
 
@@ -316,6 +455,11 @@ def main():
     group.add_argument("--init-config", type=Path, help="Create a configuration template file")
 
     parser.add_argument("--output-dir", type=Path, help="Override output directory from config")
+    parser.add_argument(
+        "--update-plan",
+        action="store_true",
+        help="Run lightweight weekly plan update (requires previous analysis)"
+    )
 
     args = parser.parse_args()
 
@@ -325,7 +469,11 @@ def main():
 
     if args.config:
         try:
-            asyncio.run(run_analysis_from_config(args.config))
+            if args.update_plan:
+                logger.info("Running weekly plan update mode (fast & cost-effective)")
+                asyncio.run(run_weekly_update_from_config(args.config))
+            else:
+                asyncio.run(run_analysis_from_config(args.config))
         except KeyboardInterrupt:
             logger.info("❌ Analysis cancelled by user")
         except Exception as e:

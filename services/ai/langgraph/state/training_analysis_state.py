@@ -7,6 +7,7 @@ class TrainingAnalysisState(MessagesState):
     user_id: str
     athlete_name: str
     garmin_data: dict[str, Any]
+    prepared_context: dict[str, Any] | None  # Optimized context with sliding window + aggregation
     analysis_context: str
     planning_context: str
 
@@ -46,6 +47,7 @@ def create_initial_state(
     user_id: str,
     athlete_name: str,
     garmin_data: dict[str, Any],
+    prepared_context: dict[str, Any] | None = None,
     analysis_context: str = "",
     planning_context: str = "",
     competitions: list[dict[str, Any]] | None = None,
@@ -60,6 +62,7 @@ def create_initial_state(
         user_id=user_id,
         athlete_name=athlete_name,
         garmin_data=garmin_data,
+        prepared_context=prepared_context,
         analysis_context=analysis_context,
         planning_context=planning_context,
         competitions=competitions or [],

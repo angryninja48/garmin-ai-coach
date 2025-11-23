@@ -1,4 +1,5 @@
 from .client import GarminConnectClient
+from .context_preparation import ContextPreparationService, PreparedContext, prepare_agent_context
 from .data_extractor import DataExtractor, TriathlonCoachDataExtractor
 from .models import (
     Activity,
@@ -20,6 +21,9 @@ __all__ = [
     'GarminConnectClient',
     'DataExtractor',
     'TriathlonCoachDataExtractor',
+    'ContextPreparationService',
+    'PreparedContext',
+    'prepare_agent_context',
     'TimeRange',
     'ExtractionConfig',
     'UserProfile',

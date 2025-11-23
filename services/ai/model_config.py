@@ -24,14 +24,15 @@ class ModelSelector:
         "gpt-4o": ModelConfiguration(name="gpt-4o", base_url="https://api.openai.com/v1"),
         "gpt-4.1": ModelConfiguration(name="gpt-4.1", base_url="https://api.openai.com/v1"),
         "gpt-4.5": ModelConfiguration(name="gpt-4.5-preview", base_url="https://api.openai.com/v1"),
-        "gpt-4o-mini": ModelConfiguration(name="gpt-4o-mini", base_url="https://api.openai.com/v1"),
+        "gpt-4o-mini": ModelConfiguration(name="openai/gpt-4o-mini", base_url="https://openrouter.ai/api/v1"),
+        "gpt-4.1-mini": ModelConfiguration(name="openai/gpt-4.1-mini", base_url="https://openrouter.ai/api/v1"),
         "o1": ModelConfiguration(name="o1-preview", base_url="https://api.openai.com/v1"),
         "o1-mini": ModelConfiguration(name="o1-mini", base_url="https://api.openai.com/v1"),
         "o3": ModelConfiguration(name="o3", base_url="https://api.openai.com/v1"),
         "o3-mini": ModelConfiguration(name="o3-mini", base_url="https://api.openai.com/v1"),
         "o4-mini": ModelConfiguration(name="o4-mini", base_url="https://api.openai.com/v1"),
         "gpt-5": ModelConfiguration(name="gpt-5", base_url="https://api.openai.com/v1"),
-        "gpt-5-mini": ModelConfiguration(name="gpt-5-mini", base_url="https://api.openai.com/v1"),
+        "gpt-5-mini": ModelConfiguration(name="openai/gpt-5-mini", base_url="https://openrouter.ai/api/v1"),
         # Anthropic Models
         "claude-4": ModelConfiguration(
             name="claude-sonnet-4-5-20250929", base_url="https://api.anthropic.com"
@@ -59,8 +60,11 @@ class ModelSelector:
             name="deepseek/deepseek-v3.2-exp", base_url="https://openrouter.ai/api/v1"
         ),
         # Google Models (via OpenRouter)
-        "gemini-2.5-pro": ModelConfiguration(
-            name="google/gemini-2.5-pro", base_url="https://openrouter.ai/api/v1"
+        "gemini-3-pro": ModelConfiguration(
+            name="google/gemini-3-pro-preview", base_url="https://openrouter.ai/api/v1"
+        ),
+        "gemini-2.5-flash": ModelConfiguration(
+            name="google/gemini-2.5-flash", base_url="https://openrouter.ai/api/v1"
         ),
         # xAI Models (via OpenRouter)
         "grok-4": ModelConfiguration(

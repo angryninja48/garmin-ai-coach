@@ -23,37 +23,44 @@ class AISettings:
     model_assignments: dict[AIMode, dict[AgentRole, str]] = field(
         default_factory=lambda: {
             AIMode.STANDARD: {
-                AgentRole.SUMMARIZER: "gpt-5",
-                AgentRole.FORMATTER: "gpt-5",
-                AgentRole.METRICS_EXPERT: "gpt-5",
-                AgentRole.PHYSIOLOGY_EXPERT: "gpt-5",
-                AgentRole.ACTIVITY_EXPERT: "gpt-5",
-                AgentRole.SYNTHESIS: "gpt-5",
+                # Data Summarization - Fast & Efficient
+                AgentRole.SUMMARIZER: "claude-4",
+                AgentRole.FORMATTER: "gpt-4o",
+                # Deep Analysis - Claude Opus with extended reasoning
+                AgentRole.METRICS_EXPERT: "claude-opus-thinking",
+                AgentRole.PHYSIOLOGY_EXPERT: "claude-opus-thinking",
+                AgentRole.ACTIVITY_EXPERT: "claude-opus",
+                # Synthesis - High-quality output
+                AgentRole.SYNTHESIS: "claude-opus",
+                # Strategic Planning - GPT-5 reasoning
                 AgentRole.WORKOUT: "gpt-5",
                 AgentRole.COMPETITION_PLANNER: "gpt-5",
                 AgentRole.SEASON_PLANNER: "gpt-5",
             },
             AIMode.COST_EFFECTIVE: {
-                AgentRole.SUMMARIZER: "claude-3-haiku",
-                AgentRole.FORMATTER: "claude-3-haiku",
-                AgentRole.METRICS_EXPERT: "claude-3-haiku",
-                AgentRole.PHYSIOLOGY_EXPERT: "claude-3-haiku",
-                AgentRole.ACTIVITY_EXPERT: "claude-3-haiku",
-                AgentRole.SYNTHESIS: "claude-3-haiku",
-                AgentRole.WORKOUT: "claude-3-haiku",
-                AgentRole.COMPETITION_PLANNER: "claude-3-haiku",
-                AgentRole.SEASON_PLANNER: "claude-3-haiku",
+                # Gemini 2.0 Flash - Extremely cheap, 2M context, very fast
+                AgentRole.SUMMARIZER: "gemini-2.5-flash",
+                AgentRole.METRICS_EXPERT: "gemini-2.5-flash",
+                AgentRole.PHYSIOLOGY_EXPERT: "gemini-2.5-flash",
+                AgentRole.ACTIVITY_EXPERT: "gemini-2.5-flash",
+                AgentRole.SYNTHESIS: "gemini-2.5-flash",
+                # GPT-5-mini for formatting/planning - fast & cheap
+                AgentRole.FORMATTER: "gpt-5-mini",
+                AgentRole.WORKOUT: "gpt-5-mini",
+                AgentRole.COMPETITION_PLANNER: "gpt-5-mini",
+                AgentRole.SEASON_PLANNER: "gpt-5-mini",
             },
             AIMode.DEVELOPMENT: {
-                AgentRole.SUMMARIZER: "claude-4",
+                # Claude-4 Thinking for development debugging
+                AgentRole.SUMMARIZER: "claude-4-thinking",
                 AgentRole.FORMATTER: "claude-4",
-                AgentRole.METRICS_EXPERT: "claude-4",
-                AgentRole.PHYSIOLOGY_EXPERT: "claude-4",
-                AgentRole.ACTIVITY_EXPERT: "claude-4",
-                AgentRole.SYNTHESIS: "claude-4",
-                AgentRole.WORKOUT: "claude-4",
-                AgentRole.COMPETITION_PLANNER: "claude-4",
-                AgentRole.SEASON_PLANNER: "claude-4",
+                AgentRole.METRICS_EXPERT: "claude-4-thinking",
+                AgentRole.PHYSIOLOGY_EXPERT: "claude-4-thinking",
+                AgentRole.ACTIVITY_EXPERT: "claude-4-thinking",
+                AgentRole.SYNTHESIS: "claude-4-thinking",
+                AgentRole.WORKOUT: "claude-4-thinking",
+                AgentRole.COMPETITION_PLANNER: "claude-4-thinking",
+                AgentRole.SEASON_PLANNER: "claude-4-thinking",
             },
         }
     )

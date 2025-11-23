@@ -18,8 +18,14 @@ context:
 
 # Data Extraction Settings
 extraction:
-  activities_days: 21      # How many days of activities to extract
-  metrics_days: 56         # How many days of metrics to extract
+  activities_days: 21      # How many days of activities to extract (raw data)
+  metrics_days: 56         # How many days of metrics to extract (raw data)
+  
+  # Context Preparation (optimized for AI agents)
+  # Balances detailed recent data with aggregated historical trends
+  context_recent_days: 14  # Days of full activity detail (default: 14)
+  context_trends_days: 180 # Days of weekly aggregated trends (default: 180 = ~6 months)
+  
   ai_mode: "standard"      # Overrides .env AI_MODE for coach-cli runs; one of: "development", "standard", "cost_effective"
   enable_plotting: false   # Enable AI-generated plots (default: false to save costs). Set to true for visual insights.
   hitl_enabled: true       # Enable Human-in-the-Loop interactions - agents can ask questions during analysis (default: true)
@@ -37,6 +43,17 @@ competitions:
     race_type: "Sprint"
     priority: "B"
     target_time: "01:15:00"
+
+# Weekly Progress Tracking (for --update-plan mode)
+# Update this section before running weekly updates to get adjusted plans
+weekly_progress:
+  notes: |
+    Week 1 Status:
+    - Completed: 3/3 runs as planned
+    - Recovery: Calves feeling 80% better
+    - RHR: Dropped from 58 to 53 (good progress)
+    - Energy: Felt strong on easy runs
+    - Adjustments needed: Ready to increase volume slightly
 
 outside:
   bikereg:
